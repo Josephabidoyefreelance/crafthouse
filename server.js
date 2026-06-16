@@ -1,6 +1,15 @@
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const fs = require('fs');
+
+// Ensure required folders exist
+const uploadsDir = path.join(__dirname, 'public/uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('Created uploads directory');
+}
+
 const { readJSON, writeJSON } = require('./data/db');
 
 const app = express();
@@ -27,8 +36,22 @@ app.use('/', require('./routes/pages'));
 app.use('/api', require('./routes/api'));
 app.use('/admin', require('./routes/admin'));
 
-app.listen(PORT, () => {
-  console.log('Crafthouse Kitchen running at http://localhost:' + PORT);
-  console.log('Admin panel: http://localhost:' + PORT + '/admin/login');
-  console.log('Demo login — Username: admin | Password: crafthouse2024');
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Server error:', err.message);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log('Crafthouse Kitchen running on port ' + PORT);
+  console.log('Admin: /admin/login | Username: admin | Password: crafthouse2024');
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err.message);
+  console.error(err.stack);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
 });
