@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Account | Crafthouse Kitchen</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" type="image/png" href="/images/logo.png">
+</head>
+<body>
+  <div id="nav-mount"></div>
+
+  <!-- WELCOME SCREEN (shown after login/register) -->
+  <div id="welcome-screen" style="display:none">
+    <div style="background:linear-gradient(135deg,var(--black),#2C2310);min-height:340px;display:flex;align-items:center;justify-content:center;text-align:center;padding:60px 20px;position:relative;overflow:hidden">
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(184,147,63,0.15) 0%,transparent 70%)"></div>
+      <div style="position:relative;z-index:1">
+        <div style="width:72px;height:72px;background:rgba(184,147,63,0.15);border:2px solid var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;color:var(--gold-light)">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <p style="color:var(--gold-light);font-size:12px;letter-spacing:3px;text-transform:uppercase;margin-bottom:12px">Welcome to Crafthouse Kitchen</p>
+        <h1 id="welcome-name" style="font-family:var(--font-display);font-size:clamp(32px,5vw,52px);color:white;font-weight:600;margin-bottom:16px"></h1>
+        <p id="welcome-sub" style="color:rgba(255,255,255,0.6);font-size:15px;margin-bottom:36px">Your account is ready. Start exploring our premium kitchen collection.</p>
+        <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+          <a href="/shop" class="btn btn-gold btn-lg">Shop Now</a>
+          <a href="/" class="btn btn-outline-gold btn-lg">Go to Homepage</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTH FORMS (shown when not logged in) -->
+  <div id="auth-screen">
+    <div class="container" style="max-width:1000px;padding:60px 20px">
+      <div style="text-align:center;margin-bottom:40px">
+        <span class="section-eyebrow">Your Account</span>
+        <h1 style="font-family:var(--font-display);font-size:40px;font-weight:600;color:var(--black);margin-top:8px">Sign In or Create Account</h1>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start">
+
+        <!-- SIGN IN -->
+        <div style="background:white;border:1px solid var(--border);padding:40px">
+          <h2 style="font-family:var(--font-display);font-size:26px;font-weight:600;margin-bottom:6px">Sign In</h2>
+          <p style="font-size:13px;color:var(--mid);margin-bottom:28px">Welcome back to Crafthouse Kitchen.</p>
+          <div id="login-error" style="display:none;background:rgba(198,40,40,0.08);border:1px solid rgba(198,40,40,0.3);padding:14px;font-size:13px;color:#C62828;margin-bottom:20px"></div>
+          <div class="form-field">
+            <label class="form-label">Email Address</label>
+            <input class="form-input" type="email" id="login-email" placeholder="you@example.com">
+          </div>
+          <div class="form-field" style="margin-bottom:24px">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" id="login-password" placeholder="Your password" onkeydown="if(event.key==='Enter')handleLogin()">
+          </div>
+          <button class="btn btn-gold btn-full" onclick="handleLogin()" id="login-btn">Sign In</button>
+          <p style="text-align:center;margin-top:16px;font-size:13px;color:var(--mid)">
+            No account? <a href="#" onclick="scrollToRegister()" style="color:var(--gold);font-weight:600">Create one below</a>
+          </p>
+        </div>
+
+        <!-- CREATE ACCOUNT -->
+        <div id="register-panel" style="background:white;border:1px solid var(--border);padding:40px">
+          <h2 style="font-family:var(--font-display);font-size:26px;font-weight:600;margin-bottom:6px">Create Account</h2>
+          <p style="font-size:13px;color:var(--mid);margin-bottom:28px">Join Crafthouse Kitchen today.</p>
+          <div id="register-error" style="display:none;background:rgba(198,40,40,0.08);border:1px solid rgba(198,40,40,0.3);padding:14px;font-size:13px;color:#C62828;margin-bottom:20px"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div class="form-field">
+              <label class="form-label">First Name *</label>
+              <input class="form-input" type="text" id="reg-firstname" placeholder="John">
+            </div>
+            <div class="form-field">
+              <label class="form-label">Last Name *</label>
+              <input class="form-input" type="text" id="reg-lastname" placeholder="Doe">
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Email Address *</label>
+            <input class="form-input" type="email" id="reg-email" placeholder="you@example.com">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Phone Number</label>
+            <input class="form-input" type="tel" id="reg-phone" placeholder="08012345678">
+          </div>
+          <div class="form-field">
+            <label class="form-label">Password *</label>
+            <input class="form-input" type="password" id="reg-password" placeholder="Min. 6 characters">
+          </div>
+          <div class="form-field" style="margin-bottom:24px">
+            <label class="form-label">Confirm Password *</label>
+            <input class="form-input" type="password" id="reg-confirm" placeholder="Repeat password">
+          </div>
+          <button class="btn btn-gold btn-full" onclick="handleRegister()" id="reg-btn">Create Account</button>
+          <p style="text-align:center;margin-top:16px;font-size:13px;color:var(--mid)">
+            Already have an account? <a href="#" onclick="document.getElementById('login-email').focus()" style="color:var(--gold);font-weight:600">Sign in above</a>
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="footer-mount"></div>
+
+  <script src="/js/layout.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    // Check if already logged in
+    const existing = JSON.parse(localStorage.getItem('ch_user') || 'null');
+    if (existing) showWelcome(existing, false);
+
+    // Check URL tab param
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    if (tab === 'register') {
+      document.getElementById('register-panel').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showWelcome(user, isNew) {
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('welcome-screen').style.display = 'block';
+      document.getElementById('welcome-name').textContent = 'Welcome' + (isNew ? '!' : ' back,') + ' ' + user.firstName + '!';
+      document.getElementById('welcome-sub').textContent = isNew
+        ? 'Your account has been created successfully. Start exploring our premium kitchen collection.'
+        : 'Great to see you again. Your account is ready.';
+    }
+
+    function handleLogin() {
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errEl = document.getElementById('login-error');
+      errEl.style.display = 'none';
+
+      if (!email || !password) {
+        errEl.textContent = 'Please enter your email and password.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      // Get registered users from localStorage
+      const users = JSON.parse(localStorage.getItem('ch_users') || '[]');
+      const user = users.find(u => u.email === email && u.password === password);
+
+      if (!user) {
+        errEl.textContent = 'Email or password is incorrect.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      localStorage.setItem('ch_user', JSON.stringify(user));
+      showWelcome(user, false);
+    }
+
+    function handleRegister() {
+      const firstName = document.getElementById('reg-firstname').value.trim();
+      const lastName = document.getElementById('reg-lastname').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const phone = document.getElementById('reg-phone').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const confirm = document.getElementById('reg-confirm').value;
+      const errEl = document.getElementById('register-error');
+      errEl.style.display = 'none';
+
+      if (!firstName || !lastName || !email || !password) {
+        errEl.textContent = 'Please fill in all required fields.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errEl.textContent = 'Please enter a valid email address.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (password.length < 6) {
+        errEl.textContent = 'Password must be at least 6 characters.';
+        errEl.style.display = 'block';
+        return;
+      }
+      if (password !== confirm) {
+        errEl.textContent = 'Passwords do not match.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      const users = JSON.parse(localStorage.getItem('ch_users') || '[]');
+      if (users.find(u => u.email === email)) {
+        errEl.textContent = 'An account with this email already exists. Please sign in.';
+        errEl.style.display = 'block';
+        return;
+      }
+
+      const user = { firstName, lastName, email, phone, password, createdAt: new Date().toISOString() };
+      users.push(user);
+      localStorage.setItem('ch_users', JSON.stringify(users));
+      localStorage.setItem('ch_user', JSON.stringify(user));
+      showWelcome(user, true);
+    }
+
+    function scrollToRegister() {
+      document.getElementById('register-panel').scrollIntoView({ behavior: 'smooth' });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product | Crafthouse Kitchen</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" type="image/png" href="/images/logo.png">
+  <style>
+    .zoom-wrapper {
+      position: relative;
+      overflow: hidden;
+      cursor: zoom-in;
+      background: #F5F5F3;
+      aspect-ratio: 4/3;
+      border: 1px solid var(--border);
+    }
+    .zoom-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.1s ease;
+      transform-origin: var(--ox, 50%) var(--oy, 50%);
+      pointer-events: none;
+    }
+    .zoom-wrapper.zoomed { cursor: zoom-out; }
+    .zoom-wrapper.zoomed img { transform: scale(2.2); }
+    .thumb-strip {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .thumb-item {
+      width: 72px;
+      height: 72px;
+      border: 2px solid transparent;
+      overflow: hidden;
+      cursor: pointer;
+      background: #F5F5F3;
+      transition: border-color 0.2s;
+      flex-shrink: 0;
+    }
+    .thumb-item.active, .thumb-item:hover { border-color: var(--gold); }
+    .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
+  </style>
+</head>
+<body>
+  <div id="nav-mount"></div>
+
+  <div class="container">
+    <div class="breadcrumb" id="breadcrumb">
+      <a href="/">Home</a>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+      <a href="/shop">Shop</a>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+      <span id="bc-name">...</span>
+    </div>
+
+    <div class="product-detail" id="product-detail">
+      <div style="display:flex;align-items:center;justify-content:center;min-height:400px;grid-column:1/-1">
+        <div class="loading-spinner" style="display:block"></div>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid var(--border);padding:64px 0">
+      <div class="section-header" style="margin-bottom:36px">
+        <span class="section-eyebrow">You May Also Like</span>
+        <h2 class="section-title" style="font-size:28px">Related Products</h2>
+        <div class="gold-line"></div>
+      </div>
+      <div class="product-grid" id="related-products"></div>
+    </div>
+  </div>
+
+  <div id="footer-mount"></div>
+
+  <script src="/js/layout.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    const productId = window.location.pathname.split('/').pop();
+
+    function productCardHTML(p) {
+      return '<div class="product-card" onclick="window.location=\'/product/' + p.id + '\'">' +
+        '<div class="product-card-img"><img src="' + p.image + '" alt="' + p.name + '" loading="lazy">' +
+        (p.badge ? '<span class="product-badge">' + p.badge + '</span>' : '') + '</div>' +
+        '<div class="product-card-body"><div class="product-card-cat">' + p.category + '</div>' +
+        '<div class="product-card-name">' + p.name + '</div>' +
+        '<div class="product-card-sku">SKU: ' + p.sku + '</div>' +
+        '<div class="product-card-footer"><span class="product-price">' + formatPrice(p.price) + '</span>' +
+        '<button class="product-add-btn" onclick="event.stopPropagation();addToCart(' + p.id + ')">Add to Cart</button>' +
+        '</div></div></div>';
+    }
+
+    async function loadProduct() {
+      const res = await fetch('/api/products/' + productId);
+      if (!res.ok) {
+        document.getElementById('product-detail').innerHTML = '<div style="text-align:center;padding:80px;grid-column:1/-1"><h2>Product not found</h2><a href="/shop" class="btn btn-gold" style="margin-top:20px">Back to Shop</a></div>';
+        return;
+      }
+      const p = await res.json();
+
+      document.title = p.name + ' | Crafthouse Kitchen';
+      document.getElementById('bc-name').textContent = p.name.length > 35 ? p.name.slice(0,35)+'...' : p.name;
+
+      // Build images array — support both old single image and new multi-image
+      const images = (p.images && p.images.length) ? p.images : [p.image];
+
+      const thumbsHTML = images.map((img, i) =>
+        '<div class="thumb-item ' + (i===0?'active':'') + '" onclick="setImg(\'' + img + '\', this)">' +
+        '<img src="' + img + '" alt="View ' + (i+1) + '" loading="lazy"></div>'
+      ).join('');
+
+      document.getElementById('product-detail').innerHTML =
+        '<div class="product-gallery">' +
+        '<div class="zoom-wrapper" id="zoom-wrap">' +
+        '<img src="' + images[0] + '" alt="' + p.name + '" id="main-img">' +
+        '</div>' +
+        '<div class="thumb-strip">' + thumbsHTML + '</div>' +
+        (images.length > 1 ? '<p style="font-size:11px;color:var(--mid);margin-top:8px;letter-spacing:1px">HOVER ON IMAGE TO ZOOM</p>' : '') +
+        '</div>' +
+        '<div class="product-info">' +
+        '<div class="product-info-cat"><a href="/category/' + encodeURIComponent(p.category) + '" style="color:inherit">' + p.category + '</a>' +
+        (p.subcategory ? ' / ' + p.subcategory : '') + '</div>' +
+        '<h1 class="product-info-title">' + p.name + '</h1>' +
+        '<div class="product-info-sku">SKU: ' + p.sku + '</div>' +
+        (p.badge ? '<span class="product-badge" style="position:static;display:inline-block;margin-bottom:16px">' + p.badge + '</span>' : '') +
+        '<div class="product-info-price">' + formatPrice(p.price) + '</div>' +
+        '<div class="product-info-desc">' + (p.description || '') + '</div>' +
+        '<div class="product-qty-row">' +
+        '<div class="qty-control">' +
+        '<button class="qty-btn" onclick="changeQty(-1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button>' +
+        '<input type="number" class="qty-input" id="qty-input" value="1" min="1" max="99">' +
+        '<button class="qty-btn" onclick="changeQty(1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>' +
+        '</div>' +
+        '<button class="btn btn-gold" style="flex:1" onclick="addToCartFromPage()">Add to Cart</button>' +
+        '</div>' +
+        '<a href="/checkout" class="btn btn-black btn-full" style="margin-bottom:24px" onclick="buyNow(event)">Buy Now</a>' +
+        '<div class="product-meta">' +
+        '<div class="product-meta-row"><span class="product-meta-label">Category</span><span>' + p.category + '</span></div>' +
+        (p.subcategory ? '<div class="product-meta-row"><span class="product-meta-label">Type</span><span>' + p.subcategory + '</span></div>' : '') +
+        '<div class="product-meta-row"><span class="product-meta-label">SKU</span><span>' + p.sku + '</span></div>' +
+        '<div class="product-meta-row"><span class="product-meta-label">Availability</span><span style="color:var(--success)">In Stock</span></div>' +
+        '</div>' +
+        '</div>';
+
+      // Zoom on hover
+      const wrap = document.getElementById('zoom-wrap');
+      if (wrap) {
+        wrap.addEventListener('mousemove', function(e) {
+          const rect = wrap.getBoundingClientRect();
+          const x = ((e.clientX - rect.left) / rect.width * 100).toFixed(1) + '%';
+          const y = ((e.clientY - rect.top) / rect.height * 100).toFixed(1) + '%';
+          wrap.style.setProperty('--ox', x);
+          wrap.style.setProperty('--oy', y);
+        });
+        wrap.addEventListener('mouseenter', function() { wrap.classList.add('zoomed'); });
+        wrap.addEventListener('mouseleave', function() { wrap.classList.remove('zoomed'); });
+      }
+
+      // Load related
+      const relRes = await fetch('/api/products?category=' + encodeURIComponent(p.category) + '&limit=4');
+      const relData = await relRes.json();
+      const related = relData.products.filter(r => r.id !== p.id).slice(0, 4);
+      document.getElementById('related-products').innerHTML = related.map(productCardHTML).join('');
+    }
+
+    function setImg(src, thumb) {
+      document.getElementById('main-img').src = src;
+      document.querySelectorAll('.thumb-item').forEach(t => t.classList.remove('active'));
+      thumb.classList.add('active');
+    }
+
+    function changeQty(delta) {
+      const input = document.getElementById('qty-input');
+      if (!input) return;
+      let val = parseInt(input.value) + delta;
+      if (val < 1) val = 1;
+      if (val > 99) val = 99;
+      input.value = val;
+    }
+
+    function addToCartFromPage() {
+      const qty = parseInt(document.getElementById('qty-input')?.value || 1);
+      addToCart(productId, qty);
+    }
+
+    async function buyNow(e) {
+      e.preventDefault();
+      const qty = parseInt(document.getElementById('qty-input')?.value || 1);
+      await addToCart(productId, qty);
+      window.location.href = '/checkout';
+    }
+
+    loadProduct();
+  </script>
+</body>
+</html>

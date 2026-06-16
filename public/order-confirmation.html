@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Confirmed | Crafthouse Kitchen</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" type="image/png" href="/images/logo.png">
+</head>
+<body>
+  <div id="nav-mount"></div>
+
+  <div class="container">
+    <div id="confirm-content" style="min-height:60vh;display:flex;align-items:center;justify-content:center">
+      <div class="loading-spinner" style="display:block"></div>
+    </div>
+  </div>
+
+  <div id="footer-mount"></div>
+
+  <script src="/js/layout.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    async function loadConfirmation() {
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get('orderId');
+
+      if (!orderId) {
+        window.location.href = '/';
+        return;
+      }
+
+      const res = await fetch(`/api/orders/${orderId}`);
+      if (!res.ok) {
+        document.getElementById('confirm-content').innerHTML = `
+          <div class="order-confirm">
+            <h1 style="font-size:28px">Order not found</h1>
+            <p>We couldn't find order #${orderId}.</p>
+            <a href="/" class="btn btn-gold" style="margin-top:24px">Go to Homepage</a>
+          </div>`;
+        return;
+      }
+
+      const order = await res.json();
+      const delivery = order.total >= 500000 ? 0 : 15000;
+      const grandTotal = order.total + delivery;
+
+      const paymentInstructions = {
+        'bank-transfer': `
+          <div style="background:rgba(184,147,63,0.06);border:1px solid rgba(184,147,63,0.25);padding:24px;margin:32px 0;text-align:left;max-width:480px;margin-left:auto;margin-right:auto">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:12px">Bank Transfer Details</div>
+            <div style="font-size:14px;color:var(--mid);line-height:2">
+              Bank: <strong style="color:var(--black)">First Bank</strong><br>
+              Account Number: <strong style="color:var(--black)">1234567890</strong><br>
+              Account Name: <strong style="color:var(--black)">Sixth Column Limited</strong><br>
+              Amount: <strong style="color:var(--gold)">${formatPrice(grandTotal)}</strong>
+            </div>
+            <p style="font-size:12px;color:var(--mid);margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">Please use your Order ID <strong>${order.id}</strong> as the payment reference. We will confirm your order within 2 hours of receiving payment.</p>
+          </div>`,
+        'pay-on-delivery': `
+          <div style="background:rgba(46,125,50,0.06);border:1px solid rgba(46,125,50,0.25);padding:20px;margin:32px auto;max-width:480px;text-align:left">
+            <div style="font-size:13px;color:var(--mid);line-height:1.8">
+              Pay <strong style="color:var(--black)">${formatPrice(grandTotal)}</strong> in cash or POS when your order arrives. Our delivery team will contact you to schedule delivery.
+            </div>
+          </div>`,
+        'paystack': `
+          <div style="background:rgba(184,147,63,0.06);border:1px solid rgba(184,147,63,0.25);padding:20px;margin:32px auto;max-width:480px;text-align:left">
+            <div style="font-size:13px;color:var(--mid);line-height:1.8">
+              A payment link will be sent to <strong>${order.customer.email}</strong> shortly. Please complete payment of <strong style="color:var(--gold)">${formatPrice(grandTotal)}</strong> to confirm your order.
+            </div>
+          </div>`
+      };
+
+      document.getElementById('confirm-content').innerHTML = `
+        <div class="order-confirm">
+          <div class="order-confirm-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <h1>Order Confirmed!</h1>
+          <p>Thank you, ${order.customer.firstName}. Your order has been received and is being processed.</p>
+
+          <div class="order-id-box">
+            <div class="order-id-label">Your Order ID</div>
+            <div class="order-id-value">#${order.id}</div>
+            <p style="font-size:12px;color:var(--mid);margin-top:8px">Save this reference number for tracking your order.</p>
+          </div>
+
+          ${paymentInstructions[order.paymentMethod] || ''}
+
+          <div style="background:var(--bg);border:1px solid var(--border);padding:28px;margin-bottom:32px;text-align:left">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border)">Order Summary</div>
+            ${order.items.map(item => `
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;gap:12px">
+                <span style="color:var(--black);flex:1">${item.name} <span style="color:var(--mid)">x${item.qty}</span></span>
+                <span style="font-weight:600;white-space:nowrap">${formatPrice(item.price * item.qty)}</span>
+              </div>
+            `).join('')}
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:10px 0;color:var(--mid)">
+              <span>Subtotal</span><span>${formatPrice(order.total)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:10px 0;color:var(--mid);border-bottom:1px solid var(--border)">
+              <span>Delivery</span><span>${delivery === 0 ? '<span style="color:var(--success)">Free</span>' : formatPrice(delivery)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--black);padding-top:14px">
+              <span>Total</span><span>${formatPrice(grandTotal)}</span>
+            </div>
+          </div>
+
+          <div style="background:var(--bg);border:1px solid var(--border);padding:20px;margin-bottom:32px;text-align:left">
+            <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid);margin-bottom:12px">Delivery To</div>
+            <div style="font-size:13px;color:var(--mid);line-height:1.8">
+              ${order.customer.firstName} ${order.customer.lastName}<br>
+              ${order.customer.address}, ${order.customer.city}, ${order.customer.state}<br>
+              ${order.customer.phone}<br>
+              ${order.customer.email}
+            </div>
+          </div>
+
+          <p style="font-size:13px;color:var(--mid);margin-bottom:32px">
+            Questions? Call us on <a href="https://wa.me/2348058262947" target="_blank" style="color:var(--gold)">08058262947</a> or
+            <a href="mailto:crafthouse.systems@gmail.com" style="color:var(--gold)">email us</a>.
+          </p>
+
+          <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+            <a href="/shop" class="btn btn-gold">Continue Shopping</a>
+            <a href="/" class="btn btn-outline">Go to Homepage</a>
+          </div>
+        </div>`;
+    }
+
+    loadConfirmation();
+  </script>
+</body>
+</html>

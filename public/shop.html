@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shop All Products | Crafthouse Kitchen</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" type="image/png" href="/images/logo.png">
+</head>
+<body>
+  <div id="nav-mount"></div>
+
+  <div class="container">
+    <div class="breadcrumb">
+      <a href="/">Home</a>
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+      <span>Shop</span>
+    </div>
+
+    <div class="shop-page-header">
+      <h1 class="shop-page-title" id="page-title">All Products</h1>
+    </div>
+
+    <div class="shop-layout">
+      <aside class="shop-sidebar">
+        <div class="filter-title">Filters</div>
+        <div class="filter-group">
+          <div class="filter-group-title">Category</div>
+          <div id="cat-filters"></div>
+        </div>
+        <div class="filter-group">
+          <div class="filter-group-title">Sort By</div>
+          <div class="filter-option active" data-sort="" onclick="handleSort('')">
+            <span class="filter-option-name">Relevance</span>
+          </div>
+          <div class="filter-option" onclick="handleSort('price-asc')">
+            <span class="filter-option-name">Price: Low to High</span>
+          </div>
+          <div class="filter-option" onclick="handleSort('price-desc')">
+            <span class="filter-option-name">Price: High to Low</span>
+          </div>
+          <div class="filter-option" onclick="handleSort('name')">
+            <span class="filter-option-name">Name A-Z</span>
+          </div>
+        </div>
+        <button class="btn btn-outline w-full" onclick="resetFilters()" style="margin-top:8px">Clear Filters</button>
+      </aside>
+
+      <div>
+        <div class="shop-main-header">
+          <div class="shop-results" id="results-count">Loading products...</div>
+          <div class="shop-sort">
+            <label for="sort-select" style="font-size:11px;letter-spacing:1px">Sort:</label>
+            <select id="sort-select" onchange="handleSort(this.value)">
+              <option value="">Relevance</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="name">Name A-Z</option>
+            </select>
+          </div>
+        </div>
+        <div class="product-grid" id="product-grid"></div>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer-mount"></div>
+
+  <script src="/js/layout.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    let state = { category: '', sort: '', search: '', page: 1, limit: 12, totalPages: 1 };
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('search')) state.search = params.get('search');
+    if (params.get('category')) state.category = params.get('category');
+    if (state.search) document.getElementById('page-title').textContent = 'Search: "' + state.search + '"';
+
+    function productCardHTML(p) {
+      const badgeClass = p.badge === 'New' ? 'badge-new' : p.badge === 'Value' ? 'badge-value' : '';
+      return '<div class="product-card" onclick="window.location=\'/product/' + p.id + '\'">' +
+        '<div class="product-card-img">' +
+        '<img src="' + p.image + '" alt="' + p.name + '" loading="lazy">' +
+        (p.badge ? '<span class="product-badge ' + badgeClass + '">' + p.badge + '</span>' : '') +
+        '<button class="product-card-quick" onclick="event.stopPropagation();addToCart(' + p.id + ')">' +
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+        '</button></div>' +
+        '<div class="product-card-body">' +
+        '<div class="product-card-cat">' + p.category + '</div>' +
+        '<div class="product-card-name">' + p.name + '</div>' +
+        '<div class="product-card-sku">SKU: ' + p.sku + '</div>' +
+        '<div class="product-card-footer">' +
+        '<span class="product-price">' + formatPrice(p.price) + '</span>' +
+        '<button class="product-add-btn" onclick="event.stopPropagation();addToCart(' + p.id + ')">Add to Cart</button>' +
+        '</div></div></div>';
+    }
+
+    async function loadProducts() {
+      const grid = document.getElementById('product-grid');
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px 0"><div class="loading-spinner" style="display:block;margin:0 auto"></div></div>';
+
+      try {
+        const q = new URLSearchParams({
+          category: state.category,
+          search: state.search,
+          sort: state.sort,
+          page: state.page,
+          limit: state.limit
+        });
+        const res = await fetch('/api/products?' + q.toString());
+        if (!res.ok) throw new Error('Server error ' + res.status);
+        const data = await res.json();
+        state.totalPages = data.pages;
+
+        document.getElementById('results-count').textContent = data.total + ' product' + (data.total !== 1 ? 's' : '') + ' found';
+
+        if (!data.products.length) {
+          grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:80px 20px;color:var(--mid)"><p>No products found. <a href="/shop" style="color:var(--gold)">Clear search</a></p></div>';
+          document.getElementById('pagination').innerHTML = '';
+          return;
+        }
+
+        grid.innerHTML = data.products.map(productCardHTML).join('');
+        renderPagination(data.page, data.pages);
+      } catch (err) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:80px;color:var(--error)"><p>Failed to load products. Please refresh.</p></div>';
+      }
+    }
+
+    function renderPagination(current, total) {
+      const el = document.getElementById('pagination');
+      if (total <= 1) { el.innerHTML = ''; return; }
+      let html = '';
+      if (current > 1) html += '<button class="page-btn" onclick="goPage(' + (current-1) + ')">&laquo;</button>';
+      for (let i = 1; i <= total; i++) {
+        html += '<button class="page-btn ' + (i===current?'active':'') + '" onclick="goPage(' + i + ')">' + i + '</button>';
+      }
+      if (current < total) html += '<button class="page-btn" onclick="goPage(' + (current+1) + ')">&raquo;</button>';
+      el.innerHTML = html;
+    }
+
+    function goPage(p) { state.page = p; loadProducts(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+    function handleSort(val) {
+      state.sort = val;
+      state.page = 1;
+      document.getElementById('sort-select').value = val;
+      document.querySelectorAll('.filter-option').forEach(el => el.classList.remove('active'));
+      loadProducts();
+    }
+
+    async function loadCategories() {
+      const res = await fetch('/api/categories');
+      const cats = await res.json();
+      const container = document.getElementById('cat-filters');
+      const allEl = document.createElement('div');
+      allEl.className = 'filter-option' + (!state.category ? ' active' : '');
+      allEl.innerHTML = '<span class="filter-option-name">All Categories</span>';
+      allEl.onclick = () => setCategory('');
+      container.appendChild(allEl);
+      cats.forEach(cat => {
+        const el = document.createElement('div');
+        el.className = 'filter-option' + (state.category === cat ? ' active' : '');
+        el.innerHTML = '<span class="filter-option-name">' + cat + '</span>';
+        el.onclick = () => setCategory(cat);
+        container.appendChild(el);
+      });
+    }
+
+    function setCategory(cat) {
+      state.category = cat;
+      state.page = 1;
+      document.querySelectorAll('#cat-filters .filter-option').forEach(el => {
+        el.classList.toggle('active', el.querySelector('.filter-option-name').textContent === (cat || 'All Categories'));
+      });
+      document.getElementById('page-title').textContent = cat || 'All Products';
+      loadProducts();
+    }
+
+    function resetFilters() {
+      state = { category: '', sort: '', search: '', page: 1, limit: 12, totalPages: 1 };
+      document.getElementById('sort-select').value = '';
+      document.getElementById('page-title').textContent = 'All Products';
+      document.querySelectorAll('#cat-filters .filter-option').forEach((el, i) => el.classList.toggle('active', i === 0));
+      loadProducts();
+    }
+
+    loadCategories();
+    loadProducts();
+  </script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+[
+  {
+    "id": "D4B6FE52",
+    "customer": {
+      "firstName": "Joseph",
+      "lastName": "Abidoye",
+      "email": "josephabidoye@gmail.com",
+      "phone": "07062869423",
+      "address": "16 Fagbohun street, Egbeda, Lagos",
+      "city": "Lagos",
+      "state": "Lagos"
+    },
+    "items": [
+      {
+        "id": 1,
+        "name": "90cm Vertical Hood Black 3266.90",
+        "price": 475000,
+        "image": "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80",
+        "qty": 1,
+        "sku": "3266.90"
+      }
+    ],
+    "total": 475000,
+    "paymentMethod": "bank-transfer",
+    "status": "Confirmed",
+    "createdAt": "2026-06-16T12:47:57.470Z"
+  }
+]
